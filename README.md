@@ -113,8 +113,10 @@ Focused on API contract validation using `@WebMvcTest`.
 
 ### Running the Suite
 To execute all automated tests and generate a summary report, run:
+
 ```bash
 mvn test
+```
 
 ---
 
