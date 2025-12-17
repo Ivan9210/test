@@ -27,7 +27,7 @@ This microservice follows the **Twelve-Factor App** methodology by using environ
 * **`SPRING_DATASOURCE_USERNAME`**: The administrative username for database access.
     * *Example:* `skd_financiera`
 * **`SPRING_DATASOURCE_PASSWORD`**: The administrative password for database access.
-    * *Example:* `Sk1cedF1nanci3r4P0stgres`
+    * *Example:* `F1nanci3r4P0stgres`
 
 ---
 
@@ -74,19 +74,89 @@ mvn spring-boot:run
 
 ---
 
+## Docker Deployment
+
+This microservice is containerized using a **multi-stage build** to ensure a lightweight, secure, and production-ready image.
+
+### 1. Build the Image
+From the project root, run the following command to build the Docker image:
+
+```bash
+docker build -t financiera-app .
+
+docker run -p 8080:8080 \
+  -e SERVER_PORT=8080 \
+  -e APP_JWTSECRET=f8D9!sQ2ZK7v@R3M#LwA6XcP0nH$eJYB4m%tU^F5a \
+  -e SPRING_DATASOURCE_URL=jdbc:postgresql://host.docker.internal:5432/postgres \
+  -e SPRING_DATASOURCE_USERNAME=skd_financiera \
+  -e SPRING_DATASOURCE_PASSWORD=F1nanci3r4P0stgres \
+  financiera-app
+```
+
+---
+
+## Testing Strategy
+
+The microservice features a comprehensive automated testing suite designed to ensure resilience across all architectural layers. We utilize **JUnit 5** as the core engine and **Mockito** for component isolation.
+
+### Unit Tests (Business Logic)
+Focused on the `Service` layer to validate core financial rules and calculations.
+
+* **Isolation:** Leveraging `@ExtendWith(MockitoExtension.class)` to mock repositories and external dependencies.
+* **Scenario Coverage:** Tests include success flows and edge cases such as insufficient funds, account not found, and data integrity.
+
+### Integration Tests (Web Layer)
+Focused on API contract validation using `@WebMvcTest`.
+
+* **HTTP Simulation:** Usage of `MockMvc` to verify REST status codes (`201 Created`, `404 Not Found`, `400 Bad Request`).
+* **Security Integration:** Ensuring that security filters correctly intercept unauthorized requests and validate JWT structures.
+
+### Running the Suite
+To execute all automated tests and generate a summary report, run:
+```bash
+mvn test
+
+---
+
+## Test Execution Configuration
+
+To run the test suite correctly in modern environments (JDK 17+), certain JVM arguments are required for **Mockito** to perform bytecode manipulation and dynamic agent loading.
+
+### Required JVM Arguments
+If you are running tests from an IDE (IntelliJ/Eclipse) or manual CLI, ensure the following arguments are included:
+
+```bash
+-ea
+-javaagent:${M2_REPO}/org/mockito/mockito-core/5.14.2/mockito-core-5.14.2.jar
+-XX:+EnableDynamicAgentLoading
+--add-opens java.base/java.lang=ALL-UNNAMED
+```
+
+---
+
 ## Project Structure
 
 The codebase follows a standard multi-tier architecture to ensure maintainability, testability, and scalability:
 
-```text
-src/main/java/com/financiera/
-├── config/             # Global configurations (OpenAPI, Security, Beans).
-├── controller/         # Entry layer (REST Controllers) with V1 versioning.
-├── dto/                # Data Transfer Objects (Request/Response schemas).
-├── exception/          # Global Exception Handling and custom error models.
-├── model/              # Persistence layer (JPA/Hibernate Entities).
-├── repository/         # Data Access Objects (Spring Data JPA).
-├── security/           # Security components (JWT Filters, Providers, Auth Managers).
-├── service/            # Business logic interfaces and orchestration.
-│   └── impl/           # Concrete service implementations.
-└── utils/              # Common utility classes and constants.
+```bash
+.
+├── src/
+│   ├── main/java/com/financiera/
+│   │   ├── config/         # Global configurations (OpenAPI, Security, Beans).
+│   │   ├── controller/     # Entry layer (REST Controllers) with V1 versioning.
+│   │   ├── dto/            # Data Transfer Objects (Request/Response schemas).
+│   │   ├── exception/      # Global Exception Handling and custom error models.
+│   │   ├── model/          # Persistence layer (JPA/Hibernate Entities).
+│   │   ├── repository/     # Data Access Objects (Spring Data JPA).
+│   │   ├── security/       # Security components (JWT Filters, Providers).
+│   │   ├── service/        # Business logic interfaces and orchestration.
+│   │   │   └── impl/       # Concrete service implementations.
+│   │   └── utils/          # Common utility classes and constants.
+│   └── test/java/com/financiera/
+│       ├── controller/     # Integration tests for REST endpoints (MockMvc).
+│       ├── service/        # Unit tests for business logic (Mockito).
+│       └── test/           # Test context configuration and application anchors.
+├── Dockerfile              # Multi-stage Docker build configuration.
+├── pom.xml                 # Maven dependencies and build configuration.
+└── README.md               # Project documentation and setup guide.
+```
